@@ -25,7 +25,7 @@ if __name__ == "__main__":
     for nome, tipo in categorias_padrao:
         try:
             criar_categoria(nome, tipo)
-        except:
+        except Exception:
             pass  # Categoria já existe
     
     # Exibir resumo

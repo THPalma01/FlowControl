@@ -57,7 +57,7 @@ if not st.session_state.logado:
                     criar_usuario(nome, email, senha)
                     st.success("Usuário criado! Faça login.")
                 except Exception as e:
-                    st.error(f"Erro ao criar usuário. Email já cadastrado?")
+                    st.error("Erro ao criar usuário. O email pode já estar cadastrado.")
 
     if aba == "Login":
         email = st.text_input("Email", key="login_email")
