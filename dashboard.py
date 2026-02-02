@@ -1,12 +1,16 @@
 import streamlit as st
+
+# st.set_page_config DEVE ser a primeira chamada Streamlit
+st.set_page_config(page_title="SmartFinance Dashboard", layout="wide")
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import io
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
-from finance import gerar_relatorio_pdf, resumo_periodo
 
 from finance import (
+    adicionar_transacao,
     despesas_periodo,
     despesas_por_categoria_periodo,
     faturamento_mensal_periodo,
@@ -14,15 +18,21 @@ from finance import (
     faturamento_total,
     listar_categorias,
     listar_transacoes_periodo,
-    listar_transacoes_periodo,
     total_despesas,
     lucro_liquido,
     ticket_medio,
     despesas_por_categoria,
-    faturamento_mensal
+    faturamento_mensal,
+    criar_usuario,
+    autenticar_usuario,
+    resumo_periodo
 )
 
-from finance import criar_usuario, autenticar_usuario
+# Função movida para antes de seu uso
+def variacao_percentual(atual, anterior):
+    if anterior == 0:
+        return 0
+    return ((atual - anterior) / anterior) * 100
 
 if "logado" not in st.session_state:
     st.session_state.logado = False
@@ -38,21 +48,32 @@ if not st.session_state.logado:
         senha = st.text_input("Senha", type="password")
 
         if st.button("Criar Conta"):
-            criar_usuario(nome, email, senha)
-            st.success("Usuário criado! Faça login.")
+            if not nome or not email or not senha:
+                st.error("Todos os campos são obrigatórios!")
+            elif len(senha) < 6:
+                st.warning("A senha deve ter pelo menos 6 caracteres.")
+            else:
+                try:
+                    criar_usuario(nome, email, senha)
+                    st.success("Usuário criado! Faça login.")
+                except Exception as e:
+                    st.error(f"Erro ao criar usuário. Email já cadastrado?")
 
     if aba == "Login":
-        email = st.text_input("Email")
-        senha = st.text_input("Senha", type="password")
+        email = st.text_input("Email", key="login_email")
+        senha = st.text_input("Senha", type="password", key="login_senha")
 
         if st.button("Entrar"):
-            user = autenticar_usuario(email, senha)
-            if user:
-                st.session_state.logado = True
-                st.session_state.usuario = user.nome
-                st.rerun()
+            if not email or not senha:
+                st.error("Preencha email e senha!")
             else:
-                st.error("Credenciais inválidas")
+                user = autenticar_usuario(email, senha)
+                if user:
+                    st.session_state.logado = True
+                    st.session_state.usuario = user.nome
+                    st.rerun()
+                else:
+                    st.error("Credenciais inválidas")
 
     st.stop()
 
@@ -61,8 +82,6 @@ st.sidebar.success(f"Logado como: {st.session_state.usuario}")
 if st.sidebar.button("Sair"):
     st.session_state.logado = False
     st.rerun()
-
-st.set_page_config(page_title="SmartFinance Dashboard", layout="wide")
 
 st.title("💼 SmartFinance — Painel Financeiro Inteligente")
 
@@ -162,7 +181,6 @@ col3.metric(
 
 st.subheader("📉 Para onde o dinheiro está indo")
 
-dados_despesas = despesas_por_categoria()
 dados_despesas = despesas_por_categoria_periodo(data_inicio, data_fim)
 
 if dados_despesas:
@@ -181,7 +199,6 @@ else:
 
 st.subheader("📈 Evolução do Faturamento Mensal")
 
-dados_mensais = faturamento_mensal()
 dados_mensais = faturamento_mensal_periodo(data_inicio, data_fim)
 
 if dados_mensais:
@@ -269,8 +286,3 @@ if dados_tabela:
                 file_name="relatorio_financeiro.pdf",
                 mime="application/pdf"
             )
-
-def variacao_percentual(atual, anterior):
-    if anterior == 0:
-        return 0
-    return ((atual - anterior) / anterior) * 100

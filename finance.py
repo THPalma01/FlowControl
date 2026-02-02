@@ -1,25 +1,9 @@
-from database import Session
-from models import Transacao, Categoria
-from datetime import date
-from sqlalchemy import func
-from models import Transacao, Categoria
-from database import Session
-from datetime import datetime
-from models import Categoria, Transacao
+from datetime import date, datetime
 import hashlib
-from models import Usuario
+from sqlalchemy import func
 
-def adicionar_transacao(descricao, valor, data, categoria_id):
-    session = Session()
-    nova = Transacao(
-        descricao=descricao,
-        valor=valor,
-        data=data,
-        categoria_id=categoria_id
-    )
-    session.add(nova)
-    session.commit()
-    session.close()
+from database import Session
+from models import Transacao, Categoria, Usuario
 
 def faturamento_total():
     session = Session()
@@ -175,14 +159,19 @@ def hash_senha(senha):
 
 def criar_usuario(nome, email, senha):
     session = Session()
-    usuario = Usuario(
-        nome=nome,
-        email=email,
-        senha=hash_senha(senha)
-    )
-    session.add(usuario)
-    session.commit()
-    session.close()
+    try:
+        usuario = Usuario(
+            nome=nome,
+            email=email,
+            senha=hash_senha(senha)
+        )
+        session.add(usuario)
+        session.commit()
+    except Exception as e:
+        session.rollback()
+        raise e
+    finally:
+        session.close()
 
 
 def autenticar_usuario(email, senha):
