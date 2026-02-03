@@ -1,6 +1,8 @@
 from datetime import date, datetime
 import hashlib
+import re
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 
 from database import Session
 from models import Transacao, Categoria, Usuario
@@ -158,15 +160,31 @@ def hash_senha(senha):
 
 
 def criar_usuario(nome, email, senha):
+    # Validação de nome
+    if not nome or not nome.strip():
+        raise ValueError("O nome é obrigatório")
+    
+    # Validação de email
+    email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    if not re.match(email_regex, email):
+        raise ValueError("Formato de email inválido")
+    
+    # Validação de senha
+    if len(senha) < 6:
+        raise ValueError("A senha deve ter pelo menos 6 caracteres")
+    
     session = Session()
     try:
         usuario = Usuario(
-            nome=nome,
-            email=email,
+            nome=nome.strip(),
+            email=email.strip().lower(),
             senha=hash_senha(senha)
         )
         session.add(usuario)
         session.commit()
+    except IntegrityError:
+        session.rollback()
+        raise ValueError("Este email já está cadastrado")
     except Exception as e:
         session.rollback()
         raise e
@@ -178,7 +196,7 @@ def autenticar_usuario(email, senha):
     session = Session()
     senha_hash = hash_senha(senha)
     user = session.query(Usuario)\
-        .filter_by(email=email, senha=senha_hash)\
+        .filter_by(email=email.strip().lower(), senha=senha_hash)\
         .first()
     session.close()
     return user
