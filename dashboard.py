@@ -37,6 +37,8 @@ def variacao_percentual(atual, anterior):
 
 if "logado" not in st.session_state:
     st.session_state.logado = False
+if "usuario" not in st.session_state:
+    st.session_state.usuario = None
     
 if not st.session_state.logado:
     st.title("🔐 SmartFinance Login")
@@ -89,8 +91,9 @@ st.title("💼 SmartFinance — Painel Financeiro Inteligente")
 st.subheader("📅 Filtro de Período")
 
 # Valores padrão: último mês
+PERIODO_PADRAO_DIAS = 30
 hoje = datetime.now().date()
-ultimo_mes = hoje - timedelta(days=30)
+ultimo_mes = hoje - timedelta(days=PERIODO_PADRAO_DIAS)
 
 col_data1, col_data2 = st.columns(2)
 
@@ -117,7 +120,7 @@ with colA2:
     fim1 = st.date_input("Período 1 - Fim", key="p1f", value=hoje)
 
 with colB1:
-    inicio2 = st.date_input("Período 2 - Início", key="p2i", value=ultimo_mes - timedelta(days=30))
+    inicio2 = st.date_input("Período 2 - Início", key="p2i", value=ultimo_mes - timedelta(days=PERIODO_PADRAO_DIAS))
 with colB2:
     fim2 = st.date_input("Período 2 - Fim", key="p2f", value=ultimo_mes)
 
