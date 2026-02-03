@@ -6,6 +6,7 @@ st.set_page_config(page_title="SmartFinance Dashboard", layout="wide")
 import pandas as pd
 import matplotlib.pyplot as plt
 import io
+from datetime import datetime, timedelta
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
@@ -50,14 +51,14 @@ if not st.session_state.logado:
         if st.button("Criar Conta"):
             if not nome or not email or not senha:
                 st.error("Todos os campos são obrigatórios!")
-            elif len(senha) < 6:
-                st.warning("A senha deve ter pelo menos 6 caracteres.")
             else:
                 try:
                     criar_usuario(nome, email, senha)
-                    st.success("Usuário criado! Faça login.")
+                    st.success("Usuário criado com sucesso! Faça login.")
+                except ValueError as e:
+                    st.error(str(e))
                 except Exception as e:
-                    st.error("Erro ao criar usuário. O email pode já estar cadastrado.")
+                    st.error(f"Erro ao criar usuário: {str(e)}")
 
     if aba == "Login":
         email = st.text_input("Email", key="login_email")
@@ -87,13 +88,22 @@ st.title("💼 SmartFinance — Painel Financeiro Inteligente")
 
 st.subheader("📅 Filtro de Período")
 
+# Valores padrão: último mês
+hoje = datetime.now().date()
+ultimo_mes = hoje - timedelta(days=30)
+
 col_data1, col_data2 = st.columns(2)
 
 with col_data1:
-    data_inicio = st.date_input("Data Inicial")
+    data_inicio = st.date_input("Data Inicial", value=ultimo_mes)
 
 with col_data2:
-    data_fim = st.date_input("Data Final")
+    data_fim = st.date_input("Data Final", value=hoje)
+
+# Validação de datas
+if data_inicio > data_fim:
+    st.error("⚠️ A data inicial não pode ser maior que a data final!")
+    st.stop()
 
 st.divider()
 st.subheader("📊 Comparação Entre Períodos")
@@ -102,14 +112,20 @@ colA1, colA2 = st.columns(2)
 colB1, colB2 = st.columns(2)
 
 with colA1:
-    inicio1 = st.date_input("Período 1 - Início", key="p1i")
+    inicio1 = st.date_input("Período 1 - Início", key="p1i", value=ultimo_mes)
 with colA2:
-    fim1 = st.date_input("Período 1 - Fim", key="p1f")
+    fim1 = st.date_input("Período 1 - Fim", key="p1f", value=hoje)
 
 with colB1:
-    inicio2 = st.date_input("Período 2 - Início", key="p2i")
+    inicio2 = st.date_input("Período 2 - Início", key="p2i", value=ultimo_mes - timedelta(days=30))
 with colB2:
-    fim2 = st.date_input("Período 2 - Fim", key="p2f")
+    fim2 = st.date_input("Período 2 - Fim", key="p2f", value=ultimo_mes)
+
+# Validação de períodos
+if inicio1 > fim1:
+    st.warning("⚠️ Período 1: Data inicial não pode ser maior que a data final")
+if inicio2 > fim2:
+    st.warning("⚠️ Período 2: Data inicial não pode ser maior que a data final")
 
 r1, d1, l1 = resumo_periodo(inicio1, fim1)
 r2, d2, l2 = resumo_periodo(inicio2, fim2)
