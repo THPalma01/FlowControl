@@ -160,6 +160,10 @@ def hash_senha(senha):
 
 
 def criar_usuario(nome, email, senha):
+    # Validação de nome
+    if not nome or not nome.strip():
+        raise ValueError("O nome é obrigatório")
+    
     # Validação de email
     email_regex = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     if not re.match(email_regex, email):
@@ -172,8 +176,8 @@ def criar_usuario(nome, email, senha):
     session = Session()
     try:
         usuario = Usuario(
-            nome=nome,
-            email=email,
+            nome=nome.strip(),
+            email=email.strip().lower(),
             senha=hash_senha(senha)
         )
         session.add(usuario)
@@ -192,7 +196,7 @@ def autenticar_usuario(email, senha):
     session = Session()
     senha_hash = hash_senha(senha)
     user = session.query(Usuario)\
-        .filter_by(email=email, senha=senha_hash)\
+        .filter_by(email=email.strip().lower(), senha=senha_hash)\
         .first()
     session.close()
     return user
